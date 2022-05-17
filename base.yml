@@ -1,0 +1,6 @@
+version: "3.8"
+
+services:
+  base:
+    extra_hosts:
+      - qi-policy.localtest.me:188.0.0.2

@@ -1,0 +1,85 @@
+version: '3.8'
+
+x-base: &base
+  extends: { file: base.yml, service: base }
+
+networks:
+  default:
+    ipam:
+      driver: default
+      config:
+        - subnet: '188.0.0.0/24'
+    name: qtg
+  proxy:
+
+services:
+  nginx-proxy:
+    image: jwilder/nginx-proxy
+    container_name: nginx-proxy
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    networks:
+      - default
+      - proxy
+
+  mongodb:
+    container_name: mongodb
+    depends_on:
+      - nginx-proxy
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+      VIRTUAL_HOST: mongodb.localtest.me
+    image: mongo
+    networks:
+      - default
+      - proxy
+    volumes:
+      - mongodata:/data/db
+
+  mongodb-manager:
+    container_name: mongodb-manager
+    restart: unless-stopped
+    depends_on:
+      - nginx-proxy
+      - mongodb
+    environment:
+      ME_CONFIG_MONGODB_ADMINPASSWORD: admin
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_SERVER: mongodb
+      VIRTUAL_HOST: mongodb-manager.localtest.me
+    image: mongo-express
+    networks:
+      - default
+      - proxy
+
+  qi-policy:
+    <<: *base
+    container_name: qi-policy
+    build:
+      context: docker/node-16-alpine
+      dockerfile: ./Dockerfile
+    depends_on:
+      - nginx-proxy
+      - mongodb
+    env_file:
+      - ../qi-policy-service/src/env/dev.env
+    environment:
+      MONGODB_PASSWORD: admin
+      MONGODB_URL: mongodb
+      MONGODB_USERNAME: admin
+      NODE_ENV: dev
+      VIRTUAL_PORT: 8080
+      VIRTUAL_HOST: qi-policy.localtest.me
+    image: qi-policy
+    networks:
+      - default
+      - proxy
+    volumes:
+      - ./../qi-policy-service/:/app
+
+volumes:
+  mongodata:

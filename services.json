@@ -1,0 +1,6 @@
+[
+  {
+    "service": "qi-policy-service",
+    "repository": "git@git.questrade.com:questinsurance/qi-policy-service.git"
+  }
+]

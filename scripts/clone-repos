@@ -1,0 +1,15 @@
+#!/bin/bash
+
+cd $(dirname $0)
+
+cloneRepo () {
+  jq -r -c '.[] | .repository + " " + .service' ../services.json | while read repo service; do
+    if [ ! -d "../../$service" ]; then
+      echo "Cloning $repo..."
+      git clone $repo ../../$service
+    fi
+  done
+}
+
+cloneRepo
+echo "Done!"
