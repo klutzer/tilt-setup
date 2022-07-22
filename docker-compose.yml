@@ -1,7 +1,15 @@
 version: '3.8'
 
 x-base: &base
+  depends_on:
+    - nginx-proxy
   extends: { file: base.yml, service: base }
+
+x-backend: &backend
+  depends_on:
+    - nginx-proxy
+    - mongodb
+  extends: { file: base.yml, service: backend }
 
 networks:
   default:
@@ -57,27 +65,17 @@ services:
       - proxy
 
   qi-policy:
-    <<: *base
+    <<: *backend
     container_name: qi-policy
     build:
       context: docker/node-16-alpine
       dockerfile: ./Dockerfile
-    depends_on:
-      - nginx-proxy
-      - mongodb
     env_file:
       - ../qi-policy-service/src/env/dev.env
     environment:
-      MONGODB_PASSWORD: admin
-      MONGODB_URL: mongodb
-      MONGODB_USERNAME: admin
-      NODE_ENV: dev
-      VIRTUAL_PORT: 8080
+      MONGODB_URL: mongodb/qi-policy?authSource=admin
       VIRTUAL_HOST: qi-policy.localtest.me
     image: qi-policy
-    networks:
-      - default
-      - proxy
     volumes:
       - ./../qi-policy-service/:/app
 
