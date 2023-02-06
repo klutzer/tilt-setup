@@ -1,5 +1,6 @@
+allow_k8s_contexts(k8s_context())
+
 if config.tilt_subcommand != 'down':
-  allow_k8s_contexts(k8s_context())
   local(command="scripts/clone-repos")
 
 docker_compose("./docker-compose.yml")
